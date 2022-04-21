@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_migrate import Migrate
 import os
 from dotenv import find_dotenv, load_dotenv
 
@@ -11,6 +12,7 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URI")
 
 db.init_app(app)
+migrate = Migrate(app, db)
 with app.app_context():
     db.create_all()
 
