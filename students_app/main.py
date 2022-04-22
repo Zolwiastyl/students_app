@@ -7,6 +7,7 @@ from marshmallow import Schema, fields
 from enum import Enum
 
 import os
+import json
 from dotenv import find_dotenv, load_dotenv
 
 from .models import Student, db
@@ -66,13 +67,13 @@ class Gender(Enum):
         return self.value
 
 
-students_post_arg_parse.add_argument(
-    "gender",
-    type=Gender,
-    help="email should be string",
-    required=True,
-    location="json",
-)
+# students_post_arg_parse.add_argument(
+#     "gender",
+#     type=Gender,
+#     help="email should be string",
+#     required=True,
+#     location="json",
+# )
 
 
 class StudentSchema(Schema):
@@ -102,8 +103,9 @@ class Student_endpoint(Resource):
     def get(self):
         print(os.environ.get("DATABASE_URI"))
 
-        print(Student.query.all())
-        return {"dupa": 2137}
+        students_to_return = [x.get_json() for x in Student.query.all()]
+
+        return students_to_return
 
     def put(self):
         return "dupa"
@@ -113,9 +115,13 @@ class Student_endpoint(Resource):
     def post(self):
         print("trying to parse")
         args = students_post_arg_parse.parse_args()
-        print(args)
+        student = Student(**args)
+        student_added = student.add_to_db()
+        print(student_added)
+        student_to_return = student_added.get_json()
+        print(student_to_return)
 
         print("\n aa \n")
         # print(request.form[0])
 
-        return {"dupa": 2137}
+        return student_to_return

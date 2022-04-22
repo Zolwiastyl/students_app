@@ -1,3 +1,4 @@
+from psycopg2 import IntegrityError
 from .base import db
 from sqlalchemy.dialects.postgresql import UUID
 from uuid import uuid4
@@ -10,3 +11,21 @@ class Student(db.Model):
     email = db.Column(db.String, unique=True)
     favorite_subject = db.Column(db.String)
     total_spent_books = db.Column(db.Integer)
+
+    def add_to_db(self):
+        db.session.add(self)
+        try:
+            db.session.commit()
+            return self
+        except IntegrityError as e:
+            print(e)
+            db.session.rollback()
+            raise e
+
+    def get_json(self):
+        return {
+            "id": str(self.id),
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "email": self.last_name,
+        }
