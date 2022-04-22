@@ -1,8 +1,10 @@
-from flask import Flask, request
 from flask_migrate import Migrate
+from flask import Flask, request
 from flask_restx import Resource, Api, fields, reqparse
 
 from marshmallow import Schema, fields
+
+from enum import Enum
 
 import os
 from dotenv import find_dotenv, load_dotenv
@@ -25,8 +27,8 @@ with app.app_context():
 student_model = api.model(
     "Student",
     {
-        "first_name": fields.String(attribute="firstName"),
-        "address": fields.String,
+        "first_name": fields.String,
+        "last_name": fields.String,
     },
 )
 
@@ -36,14 +38,40 @@ students_post_arg_parse.add_argument(
     type=str,
     help="firstName should be string",
     required=True,
-    # dest="file_name",
+    dest="first_name",
+    location="json",
 )
 students_post_arg_parse.add_argument(
     "lastName",
     type=str,
     help="lastName should be string",
     required=True,
-    # dest="last_name",
+    dest="last_name",
+    location="json",
+)
+students_post_arg_parse.add_argument(
+    "email",
+    type=str,
+    help="email should be string",
+    required=True,
+    location="json",
+)
+
+
+class Gender(Enum):
+    male = "male"
+    female = "female"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+students_post_arg_parse.add_argument(
+    "gender",
+    type=Gender,
+    help="email should be string",
+    required=True,
+    location="json",
 )
 
 
@@ -80,7 +108,8 @@ class Student_endpoint(Resource):
     def put(self):
         return "dupa"
 
-    @api.expect(StudentSchema)
+    # @api.expect(student_model)
+    @api.doc(parser=students_post_arg_parse)
     def post(self):
         print("trying to parse")
         args = students_post_arg_parse.parse_args()
