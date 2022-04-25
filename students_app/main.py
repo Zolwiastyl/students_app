@@ -1,3 +1,4 @@
+from typing import List
 from flask_migrate import Migrate
 from flask import Flask, request
 from flask_restx import Resource, Api, fields, reqparse
@@ -10,7 +11,8 @@ import os
 import json
 from dotenv import find_dotenv, load_dotenv
 
-from .models import Student, db
+from .models import Student, db, StudentSubjectAggregate, Subject
+from .models import *
 
 dotenv_path = os.path.join(os.path.dirname(__file__), "../.env")
 load_dotenv(dotenv_path)
@@ -62,17 +64,25 @@ def get_parser(is_post: bool):
     )
     if not is_post:
         students_post_arg_parse.add_argument(
-            "id",
-            type=str,
-            help="student id should be provided",
-            required=True,
-            location="path",
+            "total_spent_books",
+            type=int,
+            help="total spent books should be int",
+            required=False,
+            location="json",
         )
+        students_post_arg_parse.add_argument(
+            "favorite_subjects",
+            type=List[str],
+            help="favorite_subject should be list of strings",
+            required=False,
+            location="json",
+        )
+
     return students_post_arg_parse
 
 
 students_post_arg_parse = get_parser(True)
-students_put_arg_parse = get_parser(False)
+students_patch_arg_parse = get_parser(False)
 
 
 class Gender(Enum):
@@ -114,22 +124,11 @@ class HelloWorldParameter(Resource):
         print(args)
 
 
-@api.route("/students")
+@api.route("/student")
 class Students_endpoint(Resource):
     def get(self):
-        print(os.environ.get("DATABASE_URI"))
+        return [x.get_list_json() for x in Student.get_students_list()]
 
-        students_to_return = [x.get_json() for x in Student.query.all()]
-
-        return students_to_return
-
-
-@api.route("/student/<string:id>")
-class Student_endpoint(Resource):
-    def get(self, id):
-        pass
-
-    # @api.expect(student_model)
     @api.doc(parser=students_post_arg_parse)
     def post(self):
         print("trying to parse")
@@ -145,13 +144,22 @@ class Student_endpoint(Resource):
 
         return student_to_return
 
-    @api.doc(parser=students_put_arg_parse)
-    def patch(self):
-        print("trying to parse")
-        args = students_put_arg_parse.parse_args()
-        print(args)
-        student = Student.get_by_id(args.id)
 
+@api.route("/student/<string:id>")
+class Student_endpoint(Resource):
+    def get(self, id):
+        Student.get_by_id(id)
+        pass
+
+    # @api.expect(student_model)
+
+    @api.doc(parser=students_patch_arg_parse)
+    def patch(self, id):
+        print("trying to parse")
+        args = students_patch_arg_parse.parse_args()
+        print(args)
+        student = Student.get_by_id(id)
+        student.update(args).get_json()
         print(student)
         student_to_return = student.get_json()
         print(student_to_return)
