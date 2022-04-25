@@ -33,30 +33,46 @@ student_model = api.model(
     },
 )
 
-students_post_arg_parse = reqparse.RequestParser()
-students_post_arg_parse.add_argument(
-    "firstName",
-    type=str,
-    help="firstName should be string",
-    required=True,
-    dest="first_name",
-    location="json",
-)
-students_post_arg_parse.add_argument(
-    "lastName",
-    type=str,
-    help="lastName should be string",
-    required=True,
-    dest="last_name",
-    location="json",
-)
-students_post_arg_parse.add_argument(
-    "email",
-    type=str,
-    help="email should be string",
-    required=True,
-    location="json",
-)
+
+def get_parser(is_post: bool):
+
+    students_post_arg_parse = reqparse.RequestParser()
+    students_post_arg_parse.add_argument(
+        "firstName",
+        type=str,
+        help="firstName should be string",
+        required=is_post,
+        dest="first_name",
+        location="json",
+    )
+    students_post_arg_parse.add_argument(
+        "lastName",
+        type=str,
+        help="lastName should be string",
+        required=is_post,
+        dest="last_name",
+        location="json",
+    )
+    students_post_arg_parse.add_argument(
+        "email",
+        type=str,
+        help="email should be string",
+        required=is_post,
+        location="json",
+    )
+    if not is_post:
+        students_post_arg_parse.add_argument(
+            "id",
+            type=str,
+            help="student id should be provided",
+            required=True,
+            location="path",
+        )
+    return students_post_arg_parse
+
+
+students_post_arg_parse = get_parser(True)
+students_put_arg_parse = get_parser(False)
 
 
 class Gender(Enum):
@@ -99,7 +115,7 @@ class HelloWorldParameter(Resource):
 
 
 @api.route("/students")
-class Student_endpoint(Resource):
+class Students_endpoint(Resource):
     def get(self):
         print(os.environ.get("DATABASE_URI"))
 
@@ -107,8 +123,11 @@ class Student_endpoint(Resource):
 
         return students_to_return
 
-    def put(self):
-        return "dupa"
+
+@api.route("/student/<string:id>")
+class Student_endpoint(Resource):
+    def get(self, id):
+        pass
 
     # @api.expect(student_model)
     @api.doc(parser=students_post_arg_parse)
@@ -119,6 +138,22 @@ class Student_endpoint(Resource):
         student_added = student.add_to_db()
         print(student_added)
         student_to_return = student_added.get_json()
+        print(student_to_return)
+
+        print("\n aa \n")
+        # print(request.form[0])
+
+        return student_to_return
+
+    @api.doc(parser=students_put_arg_parse)
+    def patch(self):
+        print("trying to parse")
+        args = students_put_arg_parse.parse_args()
+        print(args)
+        student = Student.get_by_id(args.id)
+
+        print(student)
+        student_to_return = student.get_json()
         print(student_to_return)
 
         print("\n aa \n")

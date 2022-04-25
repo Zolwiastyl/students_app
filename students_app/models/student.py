@@ -23,9 +23,16 @@ class Student(db.Model):
             raise e
 
     def get_json(self):
+        print("this is self \n")
+        print(self)
         return {
             "id": str(self.id),
             "first_name": self.first_name,
             "last_name": self.last_name,
-            "email": self.last_name,
+            "email": self.email,
         }
+
+    @classmethod
+    def get_by_id(self, id):
+        print("id to look by %s", id)
+        return self.query.filter_by(id=id).first()
