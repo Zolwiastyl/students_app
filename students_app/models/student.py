@@ -1,6 +1,10 @@
 from datetime import datetime
 from enum import Enum
 from psycopg2 import IntegrityError
+
+from students_app.models.student_subject_aggregate import StudentSubjectAggregate
+
+from .subject import Subject
 from .base import db
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import defer, relationship
@@ -55,7 +59,8 @@ class Student(db.Model):
             "created_date": str(self.created_date),
             "total_spend_books": self.total_spent_books,
             "favorite_subjects": [
-                {"id": x.id, "name": x.name} for x in self.favorite_subjects
+                {"id": str(x.subject.id), "name": x.subject.name}
+                for x in self.favorite_subjects
             ],
         }
 
@@ -82,7 +87,34 @@ class Student(db.Model):
         if not data_to_update.email == None:
             self.email = data_to_update.email
         if not data_to_update.favorite_subjects == None:
-            self.favorite_subjects = data_to_update.favorite_subject
+
+            all_subjects = Subject.get_multiple_by_ids(data_to_update.favorite_subjects)
+            print("subject found by ids:")
+            print(all_subjects)
+            for aggregate in all_subjects:
+                print(aggregate)
+                if not any(
+                    x for x in self.favorite_subjects if aggregate.id == x.subject_id
+                ):
+                    print("subject is not yet in this list")
+                    print(aggregate.id)
+                    aggregate = StudentSubjectAggregate(
+                        student_id=self.id, subject_id=aggregate.id
+                    )
+                    db.session.add(aggregate)
+            print("favorite subjects")
+            print(self.favorite_subjects)
+            for aggregate in self.favorite_subjects:
+                if not any(x for x in all_subjects if aggregate.subject_id == x.id):
+                    print("subject should be removed:")
+                    print(aggregate.subject.name)
+                    StudentSubjectAggregate.query.filter_by(
+                        student_id=self.id, subject_id=aggregate.subject_id
+                    ).delete()
+                    db.session.commit()
+            print("here")
+            print(self.favorite_subjects)
+
         if not data_to_update.total_spent_books == None:
             self.total_spent_books = data_to_update.total_spent_books
 

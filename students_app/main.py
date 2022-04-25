@@ -72,7 +72,7 @@ def get_parser(is_post: bool):
         )
         students_post_arg_parse.add_argument(
             "favorite_subjects",
-            type=List[str],
+            type=list,
             help="favorite_subject should be list of strings",
             required=False,
             location="json",
@@ -148,7 +148,7 @@ class Students_endpoint(Resource):
 @api.route("/student/<string:id>")
 class Student_endpoint(Resource):
     def get(self, id):
-        Student.get_by_id(id)
+        return Student.get_by_id(id).get_json()
         pass
 
     # @api.expect(student_model)
@@ -168,3 +168,22 @@ class Student_endpoint(Resource):
         # print(request.form[0])
 
         return student_to_return
+
+
+subject_post_arg_parse = reqparse.RequestParser()
+subject_post_arg_parse.add_argument(
+    "name", type=str, help="name for subject", location="json"
+)
+
+
+@api.route("/subject")
+class Subject_endpoint(Resource):
+    def get(self):
+        return [x.get_json() for x in Subject.get_all()]
+
+    @api.doc(parser=subject_post_arg_parse)
+    def post(self):
+        args = subject_post_arg_parse.parse_args()
+        subject = Subject(**args)
+        subject_added = subject.add_to_db()
+        return subject_added.get_json()
