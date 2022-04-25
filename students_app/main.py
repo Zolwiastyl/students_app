@@ -93,37 +93,6 @@ class Gender(Enum):
         return self.value
 
 
-# students_post_arg_parse.add_argument(
-#     "gender",
-#     type=Gender,
-#     help="email should be string",
-#     required=True,
-#     location="json",
-# )
-
-
-class StudentSchema(Schema):
-    firstName = fields.Str()
-    lastName = fields.Str()
-
-
-parser = reqparse.RequestParser()
-parser.add_argument("var1", type=str, help="variable 1")
-parser.add_argument("var2", type=str, help="variable 2")
-
-
-@api.route("/hello/<string:id>")
-class HelloWorldParameter(Resource):
-    @api.doc(parser=parser)
-    def get(self, id):
-        parser = reqparse.RequestParser()
-        print("aa")
-        parser.add_argument("rate", type=int, help="Rate cannot be converted")
-        parser.add_argument("name")
-        args = parser.parse_args()
-        print(args)
-
-
 @api.route("/student")
 class Students_endpoint(Resource):
     def get(self):

@@ -11,11 +11,6 @@ from sqlalchemy.orm import defer, relationship
 from uuid import uuid4
 
 
-# class Gender(Enum):
-#     male = "MALE"
-#     female = "FEMALE"
-
-
 class Student(db.Model):
     # Columns
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
