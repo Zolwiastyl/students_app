@@ -1,7 +1,9 @@
 from typing import List
 from flask_migrate import Migrate
 from flask import Flask, request
-from flask_restx import Resource, Api, fields, reqparse
+from flask_restx import Resource, Api, fields, reqparse, cors, Namespace
+from flask_cors import CORS
+from flask_cors import cross_origin
 
 from marshmallow import Schema, fields
 
@@ -21,9 +23,11 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URI")
 app.config["RESTX_VALIDATE"] = True
 
+# other_cors = CORS(app)
 db.init_app(app)
 migrate = Migrate(app, db)
 api = Api(app)
+
 with app.app_context():
     db.create_all()
 
@@ -93,12 +97,19 @@ class Gender(Enum):
         return self.value
 
 
-@api.route("/student")
+sns = Namespace(
+    "students",
+    description="students endpoint",
+    decorators=[cors.crossdomain(origin="*")],
+)
+
+
+@sns.route("/")
 class Students_endpoint(Resource):
     def get(self):
         return [x.get_list_json() for x in Student.get_students_list()]
 
-    @api.doc(parser=students_post_arg_parse)
+    @sns.doc(parser=students_post_arg_parse)
     def post(self):
         print("trying to parse")
         args = students_post_arg_parse.parse_args()
@@ -114,7 +125,7 @@ class Students_endpoint(Resource):
         return student_to_return
 
 
-@api.route("/student/<string:id>")
+@sns.route("/<string:id>")
 class Student_endpoint(Resource):
     def get(self, id):
         return Student.get_by_id(id).get_json()
@@ -144,15 +155,25 @@ subject_post_arg_parse.add_argument(
     "name", type=str, help="name for subject", location="json"
 )
 
+subns = Namespace(
+    "subjects",
+    description="subjects endpoint",
+    decorators=[cors.crossdomain(origin="*")],
+)
 
-@api.route("/subject")
+
+@subns.route("/")
 class Subject_endpoint(Resource):
     def get(self):
         return [x.get_json() for x in Subject.get_all()]
 
-    @api.doc(parser=subject_post_arg_parse)
+    @subns.doc(parser=subject_post_arg_parse)
     def post(self):
         args = subject_post_arg_parse.parse_args()
         subject = Subject(**args)
         subject_added = subject.add_to_db()
         return subject_added.get_json()
+
+
+api.add_namespace(sns)
+api.add_namespace(subns)
